@@ -1,4 +1,5 @@
 package fastpayments
-object PaymentsDbApp extends App  {
-
+import fastpayments.model._
+import fastpayments.repository.AccountRepository
+object FastPaymentsApp extends App  {
 }
