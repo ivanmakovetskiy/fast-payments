@@ -1,5 +1,8 @@
 package fastpayments
-import fastpayments.model._
-import fastpayments.repository.AccountRepository
+
+
+
+import akka.actor.
 object FastPaymentsApp extends App  {
+
 }
