@@ -1,5 +1,5 @@
 package fastpayments.db
-import fastpayments.db.AccountDb._
+import fastpayments.db.AccountDB._
 import slick.jdbc.PostgresProfile.api._
 import scala.concurrent.{ExecutionContext, Future}
 

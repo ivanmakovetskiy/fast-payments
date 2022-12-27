@@ -1,5 +1,5 @@
 package fastpayments.repository
-import fastpayments.db.AccountDb._
+import fastpayments.db.AccountDB._
 import fastpayments.model._
 import slick.jdbc.PostgresProfile.api._
 import java.util.UUID

@@ -3,7 +3,7 @@ import slick.jdbc.PostgresProfile.api._
 import fastpayments.model.Account
 import java.util.UUID
 
-object AccountDb {
+object AccountDB {
   /**
    * The `AccountTable` class represents a database table for storing accounts.
    *
@@ -22,7 +22,7 @@ object AccountDb {
     /**
      * Maps a row of the table to an `Account` case class.
      */
-      def * = (id, balance) <> ((Account.apply _).tupled, Account.unapply _)
+      def * = (id, balance) <> ((Account.apply _).tupled, Account.unapply)
     }
   /**
    * The `accountTable` value represents the `AccountTable` as a `TableQuery`.
