@@ -1,10 +1,7 @@
 package fastpayments.repository
-
 import fastpayments.model._
-
 import java.util.UUID
 import scala.concurrent.Future
-
 
 trait AccountRepository {
   /**

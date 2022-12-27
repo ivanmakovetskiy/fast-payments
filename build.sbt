@@ -5,6 +5,8 @@ val circeVersion = "0.14.1"
 val akkaVersion = "2.6.18"
 val akkaHttpVersion = "10.2.7"
 val AkkaHttpJsonVersion = "1.39.2"
+lazy val slickVersion = "3.3.3"
+lazy val postgresVersion = "42.3.1"
 
 lazy val root = (project in file("."))
   .settings(
@@ -16,6 +18,10 @@ lazy val root = (project in file("."))
       "com.typesafe.akka" %% "akka-actor" % akkaVersion,
       "com.typesafe.akka" %% "akka-stream" % akkaVersion,
       "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
-      "de.heikoseeberger" %% "akka-http-circe" % AkkaHttpJsonVersion
+      "de.heikoseeberger" %% "akka-http-circe" % AkkaHttpJsonVersion,
+      "com.typesafe.slick" %% "slick" % slickVersion,
+      "com.typesafe.slick" %% "slick-hikaricp" % slickVersion,
+      "org.postgresql" % "postgresql" % postgresVersion,
+      "ch.qos.logback" % "logback-classic" % "1.2.3"
     )
   )

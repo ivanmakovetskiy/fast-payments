@@ -1,9 +1,6 @@
 package fastpayments.repository
-
 import fastpayments.model._
 import java.util.UUID
-import scala.collection.mutable
-
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 

@@ -1,15 +1,11 @@
 package fastpayments.route
 
-import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.Directives._
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import fastpayments.model._
 import fastpayments.repository.AccountRepository
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe._
 import io.circe.generic.auto._
-import io.circe.parser._
-import io.circe.syntax._
-class AccountRoute {
+
   class AccountRoute(repository: AccountRepository) extends FailFastCirceSupport{
     /**
      * Returns a sequence of all accounts.
@@ -32,7 +28,6 @@ class AccountRoute {
             complete(repository.get(id))
           }
         } ~
-
         /**
          * Creates a new account.
          *
@@ -56,7 +51,6 @@ class AccountRoute {
             complete(repository.replenishAccount(replenishAccount))
           }
         } ~
-
           /**
            * Withdraws money from an existing account.
            *
@@ -95,5 +89,4 @@ class AccountRoute {
             complete(repository.deleteAccount(id))
           }
         }
-  }
 }
