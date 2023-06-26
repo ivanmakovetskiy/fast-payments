@@ -1,45 +1,23 @@
 package fastpayments.repository
-import fastpayments.db.AccountDB._
+
 import fastpayments.model._
+import slick.jdbc.JdbcBackend.Database
 import slick.jdbc.PostgresProfile.api._
+import fastpayments.db.AccountDB._
+import fastpayments.db.CashbackDB._
+import scala.concurrent.Await
+import scala.concurrent.duration.DurationInt
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
-class AccountRepositoryDB(implicit val ec: ExecutionContext, db: Database) extends AccountRepository with TransferTypes{
-  /**
-   * Returns a sequence of all accounts.
-   *
-   * @return a Future containing a sequence of accounts
-   */
+class AccountRepositoryDB(implicit val ec: ExecutionContext, db: Database) extends AccountRepository with TransferOperations {
+
+  // Returns a Future containing a sequence of all accounts
   override def list(): Future[Seq[Account]] = {
     db.run(accountTable.result)
   }
 
-  /**
-   * Returns the account with the given id.
-   *
-   * @param id the unique identifier of the account to retrieve
-   * @return a Future containing the account
-   */
-  override def get(id: UUID): Future[Account] = {
-    db.run(accountTable.filter(_.id === id).result.head)
-  }
-  /**
-   * Returns the account with the given id, or None if no such account exists.
-   *
-   * @param id the unique identifier of the account to retrieve
-   * @return a Future containing the account, or None if no such account exists
-   */
-  def find(id: UUID): Future[Option[Account]] = {
-    db.run(accountTable.filter(_.id === id).result.headOption)
-  }
-
-  /**
-   * Creates a new account.
-   *
-   * @param createAccount a JSON object containing the request to create a new account
-   * @return a Future containing the created account
-   */
+  // Creates a new account and returns the created account
   override def create(create: CreateAccount): Future[Account] = {
     val item = Account(username = create.username, balance = create.balance)
     for {
@@ -48,88 +26,106 @@ class AccountRepositoryDB(implicit val ec: ExecutionContext, db: Database) exten
     } yield res
   }
 
-  /**
-   * Replenishes the balance of an existing account.
-   *
-   * @param replenishAccount a JSON object containing the request to replenish an account, along with the amount to
-   *                         add to its balance
-   * @return a Future containing the updated account, or None if no such account exists or if the amount to be
-   *         replenished is less than or equal to zero
-   */
-  override def replenishAccount(replenishAccount: ReplenishAccount): Future[Option[Account]] = {
-    val query = accountTable
-      .filter(_.id === replenishAccount.id)
-      .map(_.balance)
-    for {
-      existed <- db.run(query.result.headOption)
-      _ <- db.run {
-        if (replenishAccount.amount <= 0) {query.update(existed.get)}
-        else {query.update(existed.get + replenishAccount.amount)}
-      }
-      res <- find(replenishAccount.id)
-    } yield res
+  // Finds an account with the given id and returns an optional account
+  def find(id: UUID): Future[Option[Account]] = {
+    db.run(accountTable.filter(_.id === id).result.headOption)
   }
 
+  // Updates an existing account and returns an optional account
+  override def update(update: UpdateAccount): Future[Option[Account]] = {
+    val query = accountTable.filter(_.id === update.id)
 
-  /**
-   * Withdraws money from an existing account.
-   *
-   * @param withdrawAccount a JSON object containing the request to withdraw from an account, along with the amount
-   *                        to withdraw
-   * @return a Future containing the updated account, or None if no such account exists or if the amount to be
-   *         withdrawn is less than or equal to zero or greater than the current balance of the account
-   */
-  override def withdrawAccount(withdrawAccount: WithdrawAccount): Future[Option[Account]] = {
-    val query = accountTable
-      .filter(_.id === withdrawAccount.id)
-      .map(_.balance)
-    for {
-      existed <- db.run(query.result.headOption)
-      _ <- db.run {
-        if (withdrawAccount.amount <= 0 || withdrawAccount.amount > existed.get) {query.update(existed.get)}
-        else {query.update(existed.get - withdrawAccount.amount)}
-      }
-      res <- find(withdrawAccount.id)
-    } yield res
+    val updateQuery = (update.balance, update.username) match {
+      case (Some(sum), Some(username)) => query.map(a => (a.balance, a.username)).update((sum, username))
+      case (Some(sum), None) => query.map(a => a.balance).update(sum)
+      case (None, Some(username)) => query.map(a => a.username).update(username)
+    }
+
+    db.run(updateQuery)
+    find(update.id)
   }
 
-  /**
-   * Transfers money from one account to another.
-   *
-   * @param transferMoney a JSON object containing the request to transfer money from one account to another, along
-   *                      with the unique identifiers of the accounts and the amount to transfer
-   * @return a Future containing the updated account from which the money is transferred, or None if no such account
-   *         exists or if the amount to be transferred is less than or equal to zero or greater than the current
-   *         balance of the account
-   */
-  override def transferMoney(transferMoney: TransferMoney): Future[Option[Account]] = {
-    val WithdrawFromAccount = WithdrawAccount(transferMoney.idFrom, transferMoney.amount)
-    val queryFrom = accountTable
-      .filter(_.id === transferMoney.idFrom)
-      .map(_.balance)
-    val queryTo = accountTable
-      .filter(_.id === transferMoney.idTo)
-      .map(_.balance)
-    for {
-      existedFrom <- db.run(queryFrom.result.headOption)
-      existedTo <- db.run(queryTo.result.headOption)
-      _ <- db.run {
-        if (transferMoney.amount <= 0 || transferMoney.amount > existedFrom.get) {queryFrom.update(existedFrom.get)}
-        else {
-          withdrawAccount(WithdrawFromAccount)
-          queryTo.update(existedTo.get + transferMoney.amount)
-        }
-      }
-      res <- find(transferMoney.idFrom)
-    } yield res
+  // Retrieves an account with the given id
+  override def get(id: UUID): Future[Account] = {
+    db.run(accountTable.filter(_.id === id).result.head)
   }
-  /**
-   * Deletes an existing account.
-   *
-   * @param id the unique identifier of the account to delete
-   * @return a Future containing Unit when the account is deleted
-   */
-  override def deleteAccount(id: UUID): Future[Unit] = {
+
+  // Deletes an account with the given id
+  override def delete(id: UUID): Future[Unit] = Future {
     db.run(accountTable.filter(_.id === id).delete).map(_ => ())
+  }
+
+  // Replenishes the balance of an account and returns the updated account
+  override def replenish(replenishItem: ReplenishItem): Future[Either[String, Account]] = {
+    for {
+      balance <- db.run(accountTable.filter(_.id === replenishItem.id).map(x => x.balance).result.headOption)
+      either: Either[String, Int] <- balance match {
+        case Some(balance) =>
+          db.run {
+            accountTable.filter(_.id === replenishItem.id).map(x => x.balance).update(balance + replenishItem.amount)
+          }.map(Right(_))
+        case None => Future.successful(Left("Element not found"))
+      }
+
+      res <- either match {
+        case Right(_) => find(replenishItem.id).map(maybeAccount => maybeAccount.map(account => Right(account)).getOrElse(Left("No such account")))
+        case Left(error) => Future.successful(Left(error))
+      }
+    } yield res
+  }
+
+  // Withdraws an amount from the balance of an account and returns the updated account
+  override def withdraw(withdrawItem: WithdrawItem): Future[Either[String, Account]] = {
+    for {
+      balance <- db.run(accountTable.filter(_.id === withdrawItem.id).map(x => x.balance).result.headOption)
+      either: Either[String, Int] <- balance match {
+        case Some(balance) if balance >= withdrawItem.amount =>
+          db.run {
+            accountTable.filter(_.id === withdrawItem.id).map(x => x.balance).update(balance - withdrawItem.amount)
+          }.map(Right(_))
+        case Some(balance) if balance < withdrawItem.amount => Future.successful(Left("Insufficient funds"))
+        case None => Future.successful(Left("Element not found"))
+      }
+
+      res <- either match {
+        case Right(_) => find(withdrawItem.id).map(maybeAccount => maybeAccount.map(account => Right(account)).getOrElse(Left("No such account")))
+        case Left(error) => Future.successful(Left(error))
+      }
+    } yield res
+  }
+
+  // Retrieves the cashback percentage associated with a category
+  def getCashback(catid: UUID): Future[Float] = {
+    for {
+      result <- db.run(cashbackTable.filter(_.id === catid).map(x => x.percent).result.headOption)
+      percent = result match {
+        case Some(percent) => percent
+        case None => 0
+      }
+    } yield percent
+  }
+
+  // Transfers an amount from one account to another and returns the transfer response
+  override def transfer(transferItem: TransferItem): Future[Either[String, TransferResponse]] = {
+    for {
+      withdrawRes <- withdraw(WithdrawItem(transferItem.from, transferItem.amount))
+      result <- withdrawRes match {
+        case Right(rightW) =>
+        {
+          transferItem.category_id match {
+            case Some(cat) => replenish(ReplenishItem(transferItem.from, Await.result(getCashback(cat), 10.seconds) * transferItem.amount))
+            case None => {}
+          }
+          replenish(ReplenishItem(transferItem.to, transferItem.amount)).map {
+            replenishRes =>
+              replenishRes.map { rightR =>
+                TransferResponse(rightW, rightR)
+              }
+          }
+        }
+
+        case Left(error) => Future.successful(Left(error))
+      }
+    } yield result
   }
 }

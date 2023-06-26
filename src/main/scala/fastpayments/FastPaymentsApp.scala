@@ -4,13 +4,10 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import fastpayments.db.InitDB
+import fastpayments.repository.CategoryRepositoryDB
 import fastpayments.repository.AccountRepositoryDB
 import fastpayments.route._
-import slick.jdbc.PostgresProfile
-import slick.jdbc.PostgresProfile.api._
-
-import scala.concurrent
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
+import slick.jdbc.JdbcBackend.Database
 
 object FastPaymentsApp extends App with FailFastCirceSupport {
   /**
@@ -21,12 +18,12 @@ object FastPaymentsApp extends App with FailFastCirceSupport {
   /**
    * An implicit `ExecutionContextExecutor` instance is required for running futures.
    */
-  implicit val ec: ExecutionContextExecutor = system.dispatcher
+  implicit val ec = system.dispatcher
 
   /**
    * An implicit `Database` instance is required for interacting with the database.
    */
-  implicit val db: PostgresProfile.backend.Database = Database.forConfig("database.postgres")
+  implicit val db = Database.forConfig("database.postgres")
 
   /**
    * Creates the database schema if it does not already exist.
@@ -36,12 +33,12 @@ object FastPaymentsApp extends App with FailFastCirceSupport {
   /**
    * Create an instance of the AccountRepositoryDB using the provided ExecutionContext
    */
-  val repository = new AccountRepositoryDB(?: ExecutionContext, $conforms)
+  val repository = new AccountRepositoryDB
 
   /**
    * Create an instance of the CategoryRepositoryDB using the provided ExecutionContext
    */
-  val category = new CategoryRepositoryDB(?: ExecutionContext, $conforms)
+  val category = new CategoryRepositoryDB
 
   /**
    * Instantiates a new `HelloRoute` instance and binds it to the `helloRoute` variable.

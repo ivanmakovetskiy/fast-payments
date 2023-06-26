@@ -1,26 +1,47 @@
-GET http://localhost:8080/accounts
+GET http://localhost:8081/accounts
 
 ###
-POST http://localhost:8080/account/create
+POST http://localhost:8081/account
 Content-Type: application/json
 
+{"username": "AAA", "sum": 1000}
+
 ###
-PUT http://localhost:8080/account/replenish
+POST http://localhost:8081/account
 Content-Type: application/json
 
-{"id": "3f897bf7-205e-4302-a15a-a56dd149d9c6", "amount": 2}
+{"username": "AAB", "sum": 5000}
 
 ###
-PUT http://localhost:8080/account/withdraw
+GET http://localhost:8081/accounts
+
+###
+PUT http://localhost:8081/replenish
 Content-Type: application/json
-
-{"id": "d7875c47-51bd-461d-9b49-73ec1e81ca13", "amount": 50}
+{
+    "id": "bd56db81-dd27-40b7-93cc-231cd08bd45f",
+    "amount": 2000
+}
 
 ###
-PUT http://localhost:8080/account/transfer
+GET http://localhost:8081/accounts
+
+###
+PUT http://localhost:8081/withdraw
 Content-Type: application/json
-
-{"idFrom": "d7875c47-51bd-461d-9b49-73ec1e81ca13", "idTo": "3f897bf7-205e-4302-a15a-a56dd149d9c6", "amount": 15}
+{
+    "id": "bd56db81-dd27-40b7-93cc-231cd08bd45f",
+    "amount": 1000
+}
 
 ###
-DELETE http://localhost:8080/account/3f897bf7-205e-4302-a15a-a56dd149d9c6
+GET http://localhost:8081/accounts
+
+###
+PUT http://localhost:8081/transfer
+Content-Type: application/json
+{
+    "from": "d17a5c9c-3370-4c87-8fef-80e1bef2b8a6",
+    "to": "bd56db81-dd27-40b7-93cc-231cd08bd45f",
+    "amount": 3000
+}

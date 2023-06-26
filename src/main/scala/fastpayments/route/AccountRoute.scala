@@ -1,50 +1,74 @@
 package fastpayments.route
-
+import fastpayments.model._
 import akka.http.scaladsl.server.Directives._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import fastpayments.model._
-import fastpayments.repository.AccountRepository
 import io.circe.generic.auto._
+import akka.http.scaladsl.server.Route
+import fastpayments.repository._
 
-  class AccountRoute(repository: AccountRepository) extends FailFastCirceSupport{
-    /**
-     * Returns a sequence of all accounts.
-     *
-     * @return a JSON array containing the accounts
-     */
-    def route =
-      (path("accounts") & get) {
-        val list = repository.list()
+class AccountRoute(acc_repository: AccountRepositoryDB, cat_repository: CategoryRepositoryDB) extends FailFastCirceSupport {
+  def route: Route =
+    (path("accounts") & get) {
+      val list = acc_repository.list()
+      complete(list)
+    } ~
+      path("account") {
+        (post & entity(as[CreateAccount])) {newItem =>
+          complete(acc_repository.create(newItem))
+        }
+      } ~
+      path("account" / JavaUUID) { id =>
+        get {
+          complete(acc_repository.get(id))
+        }
+      } ~
+      path("account") {
+        (put & entity(as[UpdateAccount])) { updateItem =>
+          complete(acc_repository.update(updateItem))
+        }
+      } ~
+      path("account" / JavaUUID) { id =>
+        delete {
+          complete(acc_repository.delete(id))
+        }
+      } ~
+      path("replenish"){
+        (put & entity(as[ReplenishItem])) { AccInfo =>
+          complete(acc_repository.replenish(AccInfo))
+        }
+      } ~
+      path("withdraw") {
+        (put & entity(as[WithdrawItem])) { AccInfo =>
+          complete(acc_repository.withdraw(AccInfo))
+        }
+      } ~
+      path("transfer") {
+        (put & entity(as[TransferItem])) { AccInfo =>
+          complete(acc_repository.transfer(AccInfo))
+        }
+      } ~
+      (path("categories") & get) {
+        val list = cat_repository.list()
         complete(list)
       } ~
-        path("account" / JavaUUID) { id =>
-          get {
-            complete(repository.get(id))
-          }
-        } ~
-        path("account" / "create") {
-          (post & entity(as[CreateAccount])) { newAccount =>
-            complete(repository.createAccount(newAccount))
-          }
-        } ~
-        path("account" / "replenish") {
-          (put & entity(as[ReplenishAccount])) { replenishAccount =>
-            complete(repository.replenishAccount(replenishAccount))
-          }
-        } ~
-        path("account" / "withdraw") {
-          (put & entity(as[WithdrawAccount])) { withdrawAccount =>
-            complete(repository.withdrawAccount(withdrawAccount))
-          }
-        } ~
-        path("account" / "transfer") {
-          (put & entity(as[TransferMoney])) { transferMoney =>
-            complete(repository.transferMoney(transferMoney))
-          }
-        } ~
-        path("account" / JavaUUID) { id =>
-          delete {
-            complete(repository.deleteAccount(id))
-          }
+      path("category" / JavaUUID) { id =>
+        get {
+          complete(cat_repository.get(id))
         }
+      } ~
+      path("category") {
+        (post & entity(as[AddCategory])) { newItem =>
+          complete(cat_repository.create(newItem))
+        }
+      } ~
+      path("category") {
+        (put & entity(as[UpdateCategory])) { updateItem =>
+          complete(cat_repository.update(updateItem))
+        }
+      } ~
+      path("category" / JavaUUID) { id =>
+        delete {
+          complete(cat_repository.delete(id))
+        }
+      }
 }

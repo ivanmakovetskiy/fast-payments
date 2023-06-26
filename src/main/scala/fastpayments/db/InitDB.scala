@@ -1,7 +1,7 @@
 package fastpayments.db
 
 import fastpayments.db.AccountDB._
-import fastpayments.CashbackDB.cashbackTable
+import fastpayments.db.CashbackDB.cashbackTable
 import slick.jdbc.PostgresProfile.api._
 import scala.concurrent.{ExecutionContext, Future}
 

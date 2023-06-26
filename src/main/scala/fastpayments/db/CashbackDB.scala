@@ -1,11 +1,11 @@
-package fastpayments
+package fastpayments.db
 
 import fastpayments.model.Category
 import slick.jdbc.PostgresProfile.api._
 import java.util.UUID
 
 /**
- * The `CashbackDb` object provides access to the database table for storing cashback categories.
+ * The `CashbackDB` object provides access to the database table for storing cashback categories.
  */
 object CashbackDB {
   /**
@@ -36,7 +36,7 @@ object CashbackDB {
   }
 
   /**
-   * The `CashbackTable` value represents the `CategoryTable` as a `TableQuery`.
+   * The `cashbackTable` value represents the `CategoryTable` as a `TableQuery`.
    */
   val cashbackTable = TableQuery[CategoryTable]
 }
