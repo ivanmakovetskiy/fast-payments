@@ -10,14 +10,30 @@ import scala.concurrent.duration.DurationInt
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
+/**
+ * The `AccountRepositoryDB` class is responsible for interacting with the database to perform
+ * CRUD operations and other account-related functionality.
+ *
+ * @param ec the execution context for asynchronous operations
+ * @param db the database instance
+ */
 class AccountRepositoryDB(implicit val ec: ExecutionContext, db: Database) extends AccountRepository with TransferOperations {
 
-  // Returns a Future containing a sequence of all accounts
+  /**
+   * Retrieves a list of all accounts.
+   *
+   * @return a Future containing a sequence of accounts
+   */
   override def list(): Future[Seq[Account]] = {
     db.run(accountTable.result)
   }
 
-  // Creates a new account and returns the created account
+  /**
+   * Creates a new account with the provided account details.
+   *
+   * @param create the account details for creation
+   * @return a Future containing the created account
+   */
   override def create(create: CreateAccount): Future[Account] = {
     val item = Account(username = create.username, balance = create.balance)
     for {
@@ -26,12 +42,22 @@ class AccountRepositoryDB(implicit val ec: ExecutionContext, db: Database) exten
     } yield res
   }
 
-  // Finds an account with the given id and returns an optional account
+  /**
+   * Finds an account with the specified id.
+   *
+   * @param id the id of the account to find
+   * @return a Future containing an optional account
+   */
   def find(id: UUID): Future[Option[Account]] = {
     db.run(accountTable.filter(_.id === id).result.headOption)
   }
 
-  // Updates an existing account and returns an optional account
+  /**
+   * Updates an existing account with the provided details.
+   *
+   * @param update the updated account details
+   * @return a Future containing an optional account (updated account if found, None otherwise)
+   */
   override def update(update: UpdateAccount): Future[Option[Account]] = {
     val query = accountTable.filter(_.id === update.id)
 
@@ -45,17 +71,33 @@ class AccountRepositoryDB(implicit val ec: ExecutionContext, db: Database) exten
     find(update.id)
   }
 
-  // Retrieves an account with the given id
+  /**
+   * Retrieves the account with the specified id.
+   *
+   * @param id the id of the account to retrieve
+   * @return a Future containing the retrieved account
+   */
   override def get(id: UUID): Future[Account] = {
     db.run(accountTable.filter(_.id === id).result.head)
   }
 
-  // Deletes an account with the given id
+  /**
+   * Deletes the account with the specified id.
+   *
+   * @param id the id of the account to delete
+   * @return a Future representing the completion of the deletion
+   */
   override def delete(id: UUID): Future[Unit] = Future {
     db.run(accountTable.filter(_.id === id).delete).map(_ => ())
   }
 
-  // Replenishes the balance of an account and returns the updated account
+  /**
+   * Replenishes the balance of an account with the specified amount.
+   *
+   * @param replenishItem the replenish item containing the account id and amount
+   * @return a Future containing an `Either` result, where `Right` represents the updated account and
+   *         `Left` represents an error message if the replenishment failed
+   */
   override def replenish(replenishItem: ReplenishItem): Future[Either[String, Account]] = {
     for {
       balance <- db.run(accountTable.filter(_.id === replenishItem.id).map(x => x.balance).result.headOption)
@@ -74,7 +116,13 @@ class AccountRepositoryDB(implicit val ec: ExecutionContext, db: Database) exten
     } yield res
   }
 
-  // Withdraws an amount from the balance of an account and returns the updated account
+  /**
+   * Withdraws an amount from the balance of an account.
+   *
+   * @param withdrawItem the withdraw item containing the account id and amount
+   * @return a Future containing an `Either` result, where `Right` represents the updated account and
+   *         `Left` represents an error message if the withdrawal failed
+   */
   override def withdraw(withdrawItem: WithdrawItem): Future[Either[String, Account]] = {
     for {
       balance <- db.run(accountTable.filter(_.id === withdrawItem.id).map(x => x.balance).result.headOption)
@@ -94,7 +142,12 @@ class AccountRepositoryDB(implicit val ec: ExecutionContext, db: Database) exten
     } yield res
   }
 
-  // Retrieves the cashback percentage associated with a category
+  /**
+   * Retrieves the cashback percentage associated with a category.
+   *
+   * @param catid the id of the category
+   * @return a Future containing the cashback percentage
+   */
   def getCashback(catid: UUID): Future[Float] = {
     for {
       result <- db.run(cashbackTable.filter(_.id === catid).map(x => x.percent).result.headOption)
@@ -105,7 +158,14 @@ class AccountRepositoryDB(implicit val ec: ExecutionContext, db: Database) exten
     } yield percent
   }
 
-  // Transfers an amount from one account to another and returns the transfer response
+  /**
+   * Transfers an amount from one account to another.
+   *
+   * @param transferItem the transfer item containing the source account id, destination account id,
+   *                     amount, and optional category id
+   * @return a Future containing an `Either` result, where `Right` represents the transfer response
+   *         with the source and destination accounts, and `Left` represents an error message if the transfer failed
+   */
   override def transfer(transferItem: TransferItem): Future[Either[String, TransferResponse]] = {
     for {
       withdrawRes <- withdraw(WithdrawItem(transferItem.from, transferItem.amount))
