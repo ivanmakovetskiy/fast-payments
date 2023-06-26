@@ -5,7 +5,7 @@ import slick.jdbc.PostgresProfile.api._
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
-class AccountRepositoryDB(implicit val ec: ExecutionContext, db: Database) extends AccountRepository{
+class AccountRepositoryDB(implicit val ec: ExecutionContext, db: Database) extends AccountRepository with TransferTypes{
   /**
    * Returns a sequence of all accounts.
    *
@@ -40,9 +40,12 @@ class AccountRepositoryDB(implicit val ec: ExecutionContext, db: Database) exten
    * @param createAccount a JSON object containing the request to create a new account
    * @return a Future containing the created account
    */
-  override def createAccount(createAccount: CreateAccount): Future[Account] = {
-    val account = Account()
-    db.run(accountTable += account).flatMap(_ => get(account.id))
+  override def create(create: CreateAccount): Future[Account] = {
+    val item = Account(username = create.username, balance = create.balance)
+    for {
+      _ <- db.run(accountTable += item)
+      res <- get(item.id)
+    } yield res
   }
 
   /**
