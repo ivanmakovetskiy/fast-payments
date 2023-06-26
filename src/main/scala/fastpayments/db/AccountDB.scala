@@ -14,6 +14,7 @@ object AccountDB {
      * The unique identifier of the account.
      */
     val id = column[UUID]("id", O.PrimaryKey)
+    val username = column[String]("username")
     /**
      * The balance of the account.
      */
@@ -22,7 +23,7 @@ object AccountDB {
     /**
      * Maps a row of the table to an `Account` case class.
      */
-      def * = (id, balance) <> ((Account.apply _).tupled, Account.unapply)
+    override def * = (id, username, balance) <> ((Account.apply _).tupled, Account.unapply _)
     }
   /**
    * The `accountTable` value represents the `AccountTable` as a `TableQuery`.
