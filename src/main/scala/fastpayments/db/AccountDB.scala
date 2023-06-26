@@ -17,7 +17,7 @@ object AccountDB {
     /**
      * The balance of the account.
      */
-    val balance = column[Int]("balance")
+    val balance = column[Float]("balance")
 
     /**
      * Maps a row of the table to an `Account` case class.
