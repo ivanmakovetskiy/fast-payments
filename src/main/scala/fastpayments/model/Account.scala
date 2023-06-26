@@ -10,23 +10,26 @@ import java.util.UUID
  */
 case class Account(
                     id: UUID = UUID.randomUUID(),
-                    balance: Int = 0
+                    balance: Float = 0
                   )
 
 /**
  * Represents a request to create a new account.
  */
-case class CreateAccount()
+case class CreateAccount(
+                        username: String,
+                        balance: Float
+                        )
 
 /**
  * Represents a request to update an existing account.
  *
  * @param id       The unique identifier of the account.
  * @param username An optional new username for the account.
- * @param sum      An optional new sum for the account.
+ * @param balance      An optional new balance for the account.
  */
 case class UpdateAccount(
                           id: UUID,
                           username: Option[String] = None,
-                          sum: Option[Float] = None
+                          balance: Option[Float] = None
                         )
